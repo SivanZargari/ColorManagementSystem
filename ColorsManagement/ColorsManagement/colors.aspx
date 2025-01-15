@@ -8,21 +8,20 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
     <style>
-        /* הגדרת רוחב אחיד לכל השדות */
+       
         input[type="text"], input[type="number"] {
             width: 100px;
             margin-bottom: 10px;
         }
 
-        /* קביעת גופן David לכל התוכן בעמוד */
+    
         body {
             font-family: 'David', sans-serif;
         }
 
-        /* עיצוב הכפתור "עדכן" */
         .update-btn {
-            background-color: #4169E1; /* צבע תכלת */
-            color: #FFFFFF; /* צבע טקסט לבן */
+            background-color: #4169E1; 
+            color: #FFFFFF; 
             border: none;
             padding: 10px 20px;
             font-size: 16px;
@@ -33,13 +32,12 @@
         }
 
         .update-btn i {
-            margin-left: 8px; /* רווח בין האייקון לטקסט */
+            margin-left: 8px;
         }
 
-        /* עיצוב הכפתור "חדש" */
         .new-btn {
-            background-color: #006400; /* צבע ירוק */
-            color: #FFFFFF; /* צבע טקסט לבן */
+            background-color: #006400; 
+            color: #FFFFFF; 
             border: none;
             padding: 10px 20px;
             font-size: 16px;
@@ -50,10 +48,9 @@
         }
 
         .new-btn i {
-            margin-left: 8px; /* רווח בין האייקון לטקסט */
+            margin-left: 8px; 
         }
 
-        /* אפקט כפתור במעבר עכבר */
         button:hover {
             opacity: 0.8;
         }
@@ -64,20 +61,19 @@
         }
 
         #colorsTable {
-            width: 100%;  /* הגדרת רוחב הטבלה ל-100% */
-            table-layout: fixed;  /* שימוש בסגנון Fixed להבטחת אחידות בגודל העמודות */
+            width: 100%; 
+            table-layout: fixed;  
         }
 
         #colorsTable th, #colorsTable td {
-            word-wrap: break-word;  /* מאפשר חיתוך טקסט אם הוא ארוך מדי */
-            padding: 8px;  /* מרווחים בין התוכן של תא לטבלה */
-            text-align: center;  /* יישור התוכן לאמצע */
+            word-wrap: break-word;  
+            padding: 8px;  
+            text-align: center; 
         }
     </style>
 </head>
 <body>
     <h1>טבלת צבעים</h1>
-    <!-- שדה hidden לשמירת ה-ID -->
     <input type="hidden" id="colorID" />
 
     <table id="colorsTable" border="1">
@@ -125,12 +121,10 @@
     </div>
 
 <script type="text/javascript">
-    // שליפת הטוקן
     function getAuthToken() {
-        return sessionStorage.getItem('authToken'); // טוקן שנשמר ב-sessionStorage
+        return sessionStorage.getItem('authToken'); 
     }
 
-    // פונקציה לעדכון צבע
     function updateColor() {
         var colorID = $("#colorID").val();
         var colorName = $("#colorName").val().trim();
@@ -138,36 +132,19 @@
         var displayOrder = $("#displayOrder").val();
         var inStock = $("#inStock").is(":checked");
 
-        // בדיקה אם השדות החובה (שם הצבע ומחיר) ריקים
-        if (!colorName) {
-            alert("חובה למלא את שם הצבע.");
+        if (!colorName || !price) {
+            alert("חובה למלא את שם הצבע והמחיר.");
             return;
         }
 
-        if (!price) {
-            alert("חובה למלא את המחיר.");
-            return;
-        }
-
-        // הוספת בדיקה אם המחיר הוא ערך מספרי תקין
         if (isNaN(price) || price <= 0) {
-            alert("יש להזין מחיר תקין (מספר חיובי).");
+            alert("המחיר חייב להיות מספר חיובי.");
             return;
         }
 
-        // בדיקת שדה סדר הצגה (אופציונלי אך אם קיים, צריך להיות מספר תקין)
-        if (displayOrder && (isNaN(displayOrder) || displayOrder < 0)) {
-            alert("סדר הצגה צריך להיות מספר חיובי או אפס.");
-            return;
-        }
-
-        // שליחת הבקשה עם הטוקן
         $.ajax({
             type: "POST",
             url: "Colors.aspx/UpdateColor",
-            headers: {
-                'Authorization': 'Bearer ' + getAuthToken()  // הוספת הטוקן לכותרת
-            },
             data: JSON.stringify({
                 colorID: colorID,
                 colorName: colorName,
@@ -178,82 +155,47 @@
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function (response) {
-                console.log("Color updated successfully", response);
-                loadColors(); // טען מחדש את הצבעים
-            },
-            error: function (err) {
-                console.log("Error updating color:", err);
-                alert("שגיאה בעדכון הצבע");
-            }
-        });
-    }
-
-    // פונקציה לטעינת הצבעים מתוך השרת
-    function loadColors() {
-        $.ajax({
-            type: "GET",
-            url: "Colors.aspx/GetColors",
-            headers: {
-                'Authorization': 'Bearer ' + getAuthToken()  // הוספת הטוקן לכותרת
-            },
-            success: function (response) {
-                var tableBody = $("#colorsTable tbody");
-                tableBody.empty(); // ננקה את התוכן הקיים
-
-                for (var i = 0; i < response.length; i++) {
-                    var color = response[i];
-                    var row = "<tr id='row_" + color.ID + "'>" +
-                        "<td>" + color.ColorName + "</td>" +
-                        "<td>" + color.Price + "</td>" +
-                        "<td>" + color.DisplayOrder + "</td>" +
-                        "<td>" + (color.InStock ? 'כן' : 'לא') + "</td>" +
-                        "<td><button onclick='editColor(" + color.ID + ", \"" + color.ColorName + "\", " + color.Price + ", " + color.DisplayOrder + ", " + color.InStock + ")'>ערוך</button> " +
-                        "<button onclick='deleteColor(" + color.ID + ")'>מחק</button></td>" +
-                        "</tr>";
-                    tableBody.append(row);
+                if (response.d) {
+                    alert("הצבע עודכן בהצלחה.");
+                    loadColors();  
+                } else {
+                    alert("הייתה בעיה בעדכון הצבע.");
                 }
             },
             error: function (err) {
-                console.log("Error loading colors:", err);
-                alert("שגיאה בטעינת הצבעים");
+                alert("שגיאה בעדכון הצבע.");
             }
         });
     }
 
-    // פונקציה למחיקת צבע
     function deleteColor(colorID) {
         if (confirm("האם אתה בטוח שברצונך למחוק את הצבע הזה?")) {
             $.ajax({
                 type: "POST",
                 url: "Colors.aspx/DeleteColor",
-                headers: {
-                    'Authorization': 'Bearer ' + getAuthToken()  // הוספת הטוקן לכותרת
-                },
                 data: JSON.stringify({ colorID: colorID }),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function (response) {
-                    console.log("Color deleted successfully");
-                    loadColors();  // טען מחדש את הטבלה
+                    alert(response.d); 
+                    loadColors(); 
                 },
                 error: function (err) {
-                    console.error("Error deleting color:", err);
-                    alert("שגיאה במחיקת הצבע");
+                    alert("שגיאה במחיקת הצבע.");
                 }
             });
         }
     }
 
-    // פונקציה לעריכת צבע
     function editColor(id, color, price, displayOrder, inStock) {
-        $("#colorID").val(id);
+        $("#colorID").val(id); 
+        console.log("Editing color ID: " + id);  
         $("#colorName").val(color);
         $("#price").val(price);
         $("#displayOrder").val(displayOrder);
         $("#inStock").prop("checked", inStock);
     }
 
-    // פונקציה לניקוי השדות
     function clearFields() {
         $("#colorID").val('');
         $("#colorName").val('');
@@ -262,7 +204,6 @@
         $("#inStock").prop("checked", false);
     }
 
-    // פונקציה לגרירת שורות
     $(document).ready(function () {
         loadColors();
         $("#colorsTable tbody").sortable({
@@ -275,14 +216,10 @@
         });
     });
 
-    // עדכון סדר הצגה בבסיס הנתונים
     function updateDisplayOrderInDB(newOrder) {
         $.ajax({
             type: "POST",
-            url: "Colors.aspx/updateDisplayOrderInB",
-            headers: {
-                'Authorization': 'Bearer ' + getAuthToken()  // הוספת הטוקן לכותרת
-            },
+            url: "Colors.aspx/UpdateDisplayOrderInDB",
             data: JSON.stringify({ newOrder: newOrder }),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
@@ -295,6 +232,40 @@
             }
         });
     }
+
+    function loadColors() {
+     
+        $.ajax({
+            type: "GET",
+            url: "Colors.aspx/GetColors",
+            headers: {
+                'Authorization': 'Bearer ' + getAuthToken()  
+            },
+            success: function (response) {
+                var tableBody = $("#colorsTable tbody");
+                tableBody.empty(); 
+
+                if (response.d.length === 0) {
+                    tableBody.append("<tr><td colspan='5'>לא נמצאו צבעים</td></tr>");
+                    return;
+                }
+
+                $.each(response.d, function (index, color) {
+                    var row = $("<tr id='row_" + color.ColorID + "'>");
+                    row.append("<td>" + color.ColorName + "</td>");
+                    row.append("<td>" + color.Price + "</td>");
+                    row.append("<td>" + color.DisplayOrder + "</td>");
+                    row.append("<td>" + (color.InStock ? "כן" : "לא") + "</td>");
+                    row.append("<td><button onclick='editColor(" + color.ColorID + ", \"" + color.ColorName + "\", \"" + color.Price + "\", " + color.DisplayOrder + ", " + color.InStock + ")'>ערוך</button><button onclick='deleteColor(" + color.ColorID + ")'>מחק</button></td>");
+                    tableBody.append(row);
+                });
+            },
+            error: function (err) {
+                alert("שגיאה בטעינת הצבעים.");
+            }
+        });
+    }
 </script>
+
 </body>
 </html>

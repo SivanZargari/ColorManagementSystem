@@ -1,82 +1,91 @@
 ﻿Imports System.Data.SqlClient
+Imports System.Web.Services
 
 Partial Class Colors
     Inherits System.Web.UI.Page
 
-    Dim connString As String = "Data Source=localhost;Initial Catalog=colorManagement;Integrated Security=True"
-    Dim conn As New SqlConnection(connString)
+    ' Connection string to the database
+    Shared connString As String = "Data Source=SIVANZARGARI120\SQLEXPRESS;Initial Catalog=colorManagement;Integrated Security=True"
 
-    ' עדכון צבע
-    <System.Web.Services.WebMethod()>
-    Public Shared Sub UpdateColor(ByVal colorID As Integer, ByVal colorName As String, ByVal price As Decimal, ByVal displayOrder As Integer, ByVal inStock As Boolean)
+    ' Update color method
+    <WebMethod()>
+    Public Shared Function UpdateColor(ByVal colorID As Integer, ByVal colorName As String, ByVal price As Decimal, ByVal displayOrder As Integer, ByVal inStock As Boolean) As String
         Try
-            If String.IsNullOrEmpty(colorName) OrElse price <= 0 OrElse displayOrder <= 0 Then
-                Throw New Exception("שדות לא הוזנו כראוי.")
-            End If
-
-            Dim query As String = "UPDATE Colors SET Color = @Color, Price = @Price, DisplayOrder = @DisplayOrder, ColorInStock = @ColorInStock WHERE ID = @ColorID"
-            Using conn As New SqlConnection("Data Source=localhost;Initial Catalog=colorManagement;Integrated Security=True")
+            Using conn As New SqlConnection(connString)
+                Dim query As String = "
+                UPDATE ColorsManagement
+                SET ColorName = @ColorName, 
+                    Price = @Price, 
+                    DisplayOrder = @DisplayOrder, 
+                    InStock = @InStock 
+                WHERE ID = @ColorID"
                 Dim cmd As New SqlCommand(query, conn)
-                cmd.Parameters.AddWithValue("@Color", colorName)
+                cmd.Parameters.AddWithValue("@ColorID", colorID)
+                cmd.Parameters.AddWithValue("@ColorName", colorName)
                 cmd.Parameters.AddWithValue("@Price", price)
                 cmd.Parameters.AddWithValue("@DisplayOrder", displayOrder)
-                cmd.Parameters.AddWithValue("@ColorInStock", inStock)
-                cmd.Parameters.AddWithValue("@ColorID", colorID)
+                cmd.Parameters.AddWithValue("@InStock", inStock)
+
                 conn.Open()
                 cmd.ExecuteNonQuery()
             End Using
+            Return "Color updated successfully."
         Catch ex As Exception
-            System.Diagnostics.Debug.WriteLine("Error during update: " & ex.Message)
-            Throw New Exception("שגיאה בעדכון הצבע: " & ex.Message)
+            Return "Error updating color: " & ex.Message
         End Try
-    End Sub
+    End Function
 
-    ' מחיקת צבע
-    <System.Web.Services.WebMethod()>
-    Public Shared Sub DeleteColor(ByVal colorID As Integer)
+    ' Delete color method
+    <WebMethod()>
+    Public Shared Function DeleteColor(ByVal colorID As Integer) As String
         Try
-            If colorID <= 0 Then
-                Throw New Exception("ID לא תקני למחיקה.")
-            End If
-
-            Dim query As String = "DELETE FROM Colors WHERE ID = @ColorID"
-            Using conn As New SqlConnection("Data Source=localhost;Initial Catalog=colorManagement;Integrated Security=True")
+            Using conn As New SqlConnection(connString)
+                Dim query As String = "DELETE FROM ColorsManagement WHERE ID = @ColorID"
                 Dim cmd As New SqlCommand(query, conn)
                 cmd.Parameters.AddWithValue("@ColorID", colorID)
                 conn.Open()
                 cmd.ExecuteNonQuery()
             End Using
+            Return "Color deleted successfully."
         Catch ex As Exception
-            System.Diagnostics.Debug.WriteLine("Error during deletion: " & ex.Message)
-            Throw New Exception("שגיאה במחיקת הצבע: " & ex.Message)
+            Return "Error deleting color: " & ex.Message
         End Try
-    End Sub
-
-
-    ' קריאה לכל הצבעים
-    <System.Web.Services.WebMethod()>
-    Public Shared Function GetColors() As List(Of Color)
-        Dim colors As New List(Of Color)()
-        Dim query As String = "SELECT * FROM Colors"
-        Using conn As New SqlConnection("Data Source=localhost;Initial Catalog=colorManagement;Integrated Security=True")
-            Dim cmd As New SqlCommand(query, conn)
-            conn.Open()
-            Dim reader As SqlDataReader = cmd.ExecuteReader()
-            While reader.Read()
-                Dim color As New Color()
-                color.ID = reader("ID")
-                color.ColorName = reader("Color")
-                color.Price = reader("Price")
-                color.DisplayOrder = reader("DisplayOrder")
-                color.InStock = reader("ColorInStock")
-                colors.Add(color)
-            End While
-        End Using
-        Return colors
     End Function
 
+    ' Get all colors method
+    <WebMethod()>
+    Public Shared Function GetColors() As List(Of Color)
+        Debug.WriteLine("ggggggg")
+        Console.WriteLine("ggggggg")
+
+        Dim colors As New List(Of Color)()
+        Try
+
+
+            Using conn As New SqlConnection(connString)
+                Dim query As String = "SELECT ID, Color, Price, DisplayOrder, ColorInStock FROM ColorsManagement"
+                Dim cmd As New SqlCommand(query, conn)
+                conn.Open()
+                Using reader As SqlDataReader = cmd.ExecuteReader()
+                    While reader.Read()
+                        colors.Add(New Color() With {
+                            .ID = Convert.ToInt32(reader("ID")),
+                            .ColorName = reader("Color").ToString(),
+                            .Price = Convert.ToDecimal(reader("Price")),
+                            .DisplayOrder = Convert.ToInt32(reader("DisplayOrder")),
+                            .InStock = Convert.ToBoolean(reader("ColorInStock"))
+                        })
+                    End While
+                End Using
+            End Using
+        Catch ex As Exception
+            ' Handle exception
+        End Try
+        Return colors
+    End Function
 End Class
 
+' Color class definition
 Public Class Color
     Public Property ID As Integer
     Public Property ColorName As String
